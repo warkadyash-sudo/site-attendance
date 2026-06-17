@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Civil & Marine — Site Attendance</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f3f0; color: #1a1a1a; min-height: 100vh; }
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+  .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1.5rem; }
+  .login-box { background: #fff; border: 1px solid #e0deda; border-radius: 14px; padding: 2rem; width: 100%; max-width: 360px; }
+  .brand { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 6px; }
+  .login-title { font-size: 22px; font-weight: 600; color: #1a1a1a; margin-bottom: 1.5rem; }
+  .topbar { background: #fff; border-bottom: 1px solid #e0deda; padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  .topbar-brand { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: #888; }
+  .topbar-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .main { padding: 1.5rem; max-width: 700px; margin: 0 auto; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: #555; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  input[type=text], input[type=password], select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #1a1a1a; transition: border-color 0.15s; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #1a1a1a; }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #1a1a1a; transition: all 0.15s; font-family: inherit; }
+  .btn:hover { background: #f4f3f0; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .btn-primary:hover { background: #333; }
+  .btn-full { width: 100%; }
+  .btn-green { background: #1e6b3c; color: #fff; border-color: #1e6b3c; }
+  .btn-green:hover { background: #175430; }
+  .btn-red { background: #c0392b; color: #fff; border-color: #c0392b; }
+  .btn-red:hover { background: #a93226; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
+  .btn-outline-green { color: #1e6b3c; border-color: #1e6b3c; background: #fff; }
+  .btn-outline-green:hover { background: #eaf5ee; }
+  .card { background: #fff; border: 1px solid #e0deda; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 1rem; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; }
+  .badge-green { background: #d4edda; color: #155724; }
+  .badge-amber { background: #fff3cd; color: #856404; }
+  .badge-red { background: #f8d7da; color: #721c24; }
+  .badge-gray { background: #e9ecef; color: #495057; }
+  .badge-blue { background: #d1ecf1; color: #0c5460; }
+  .status-banner { border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; display: none; }
+  .status-banner.in { background: #d4edda; border: 1px solid #c3e6cb; }
+  .status-banner.in .sb-title { color: #155724; font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+  .status-banner.in .sb-sub { color: #1e6b3c; font-size: 13px; }
+  .loc-strip { display: flex; align-items: flex-start; gap: 10px; background: #f4f3f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 1rem; font-size: 13px; color: #555; }
+  .loc-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .loc-dot.ok { background: #1e6b3c; }
+  .loc-dot.warn { background: #e67e22; }
+  .loc-dot.err { background: #c0392b; }
+  .loc-dot.loading { background: #aaa; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .record-row { border-bottom: 1px solid #f0eeeb; padding: 12px 0; }
+  .record-row:last-child { border-bottom: none; }
+  .record-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .record-meta { font-size: 12px; color: #777; margin-top: 3px; line-height: 1.6; }
+  .record-note { font-size: 12px; color: #555; margin-top: 4px; font-style: italic; }
+  .flag-note { font-size: 12px; color: #e67e22; margin-top: 4px; font-weight: 500; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; background: #f4f3f0; padding: 4px; border-radius: 10px; }
+  .tab { flex: 1; padding: 7px 10px; border: none; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: #777; font-family: inherit; transition: all 0.15s; text-align: center; }
+  .tab.active { background: #fff; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .metric { background: #fff; border: 1px solid #e0deda; border-radius: 10px; padding: 1rem; text-align: center; }
+  .metric-val { font-size: 26px; font-weight: 700; color: #1a1a1a; }
+  .metric-lbl { font-size: 11px; color: #888; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .week-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 999; opacity: 0; transition: opacity 0.25s; pointer-events: none; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+  .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.85); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #e0deda; border-top-color: #1a1a1a; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { font-size: 13px; color: #aaa; text-align: center; padding: 2rem 0; }
+  .live-time { font-size: 13px; color: #888; font-variant-numeric: tabular-nums; }
+  @media (max-width: 480px) { .metrics { gap: 6px; } .metric-val { font-size: 20px; } .main { padding: 1rem; } .tab { font-size: 12px; padding: 7px 6px; } }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay" style="display:none;"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="login-page">
+    <div class="login-box">
+      <div class="brand">Civil &amp; Marine Group</div>
+      <div class="login-title">Site Attendance</div>
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="login-name" placeholder="e.g. John Smith" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Role</label>
+        <select id="login-role">
+          <option value="">Select role...</option>
+          <option>Site Manager</option>
+          <option>Supervisor</option>
+          <option>Engineer</option>
+          <option>Operator</option>
+          <option>Labourer</option>
+          <option>Subcontractor</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Access Level</label>
+        <select id="login-access">
+          <option value="worker">Worker</option>
+          <option value="admin">Admin / Manager</option>
+        </select>
+      </div>
+      <div id="admin-pin-field" class="field" style="display:none;">
+        <label>Admin PIN</label>
+        <input type="password" id="admin-pin" placeholder="Enter PIN" maxlength="6" />
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()" style="margin-top:0.5rem;">Continue &rarr;</button>
+      <p style="font-size:11px;color:#aaa;text-align:center;margin-top:12px;">GPS location captured on clock-in</p>
+    </div>
+  </div>
+</div>
+
+<!-- WORKER -->
+<div id="screen-worker" class="screen">
+  <div class="topbar">
+    <div>
+      <div class="topbar-brand">Civil &amp; Marine</div>
+      <div class="topbar-name" id="worker-name-display"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="live-time" id="live-clock"></span>
+      <button class="btn btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="status-banner in" id="clocked-in-banner">
+      <div class="sb-title">&#9679; Currently clocked in</div>
+      <div class="sb-sub" id="banner-detail"></div>
+    </div>
+    <div class="loc-strip" id="loc-strip">
+      <div class="loc-dot loading" id="loc-dot"></div>
+      <span id="loc-text">Getting your location...</span>
+    </div>
+    <div class="card" id="clock-in-card">
+      <div class="card-title">Clock in</div>
+      <div class="field">
+        <label>Site / Project</label>
+        <select id="site-select">
+          <option value="">Select site...</option>
+          <option>59 Endeavour Way, Plainland</option>
+          <option>35 Federation Drive, Bethania</option>
+          <option>Lutwyche Road</option>
+          <option>Windsor Retaining Wall</option>
+          <option>Swanbank Industrial Units</option>
+          <option>Park Ridge Road</option>
+          <option>Other (see comments)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Work planned today</label>
+        <textarea id="clock-in-comments" placeholder="e.g. pipe installation, formwork, excavation, survey..."></textarea>
+      </div>
+      <button class="btn btn-green btn-full" onclick="clockIn()">Clock in now</button>
+    </div>
+    <div class="card" id="clock-out-card" style="display:none;">
+      <div class="card-title">Clock out</div>
+      <div class="field">
+        <label>End of day notes</label>
+        <textarea id="clock-out-comments" placeholder="Progress, issues, quantities completed, anything to note..."></textarea>
+      </div>
+      <button class="btn btn-red btn-full" onclick="clockOut()">Clock out</button>
+    </div>
+    <div class="card">
+      <div class="card-title">My recent records</div>
+      <div id="my-records"><div class="empty">No records yet</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="screen-admin" class="screen">
+  <div class="topbar">
+    <div>
+      <div class="topbar-brand">Civil &amp; Marine — Admin</div>
+      <div class="topbar-name" id="admin-name-display"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn btn-sm" onclick="refreshAdmin()">&#8635; Refresh</button>
+      <button class="btn btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="metrics" id="admin-metrics"></div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab(this,'pending')">Pending</button>
+      <button class="tab" onclick="switchTab(this,'live')">On site now</button>
+      <button class="tab" onclick="switchTab(this,'all')">All records</button>
+    </div>
+    <div id="admin-content"></div>
+  </div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycby2tuRRXJh_OMrhhEN_STrW7tTMdBkB8PkCLfywPURhzor19a4K_JlXceco3nz08SBUdw/exec';
+const ADMIN_PIN = '1234';
+const SITE_LAT = -27.56, SITE_LNG = 152.86, GEOFENCE_M = 5000;
+
+let state = {
+  user: null, role: null, access: null,
+  location: null, locationOk: null, locationAddress: null,
+  currentRecordId: null, adminTab: 'pending', allRecords: []
+};
+
+function loading(on) {
+  document.getElementById('loading-overlay').style.display = on ? 'flex' : 'none';
+}
+function toast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function fmtDate(v) {
+  if (!v) return '—';
+  const d = new Date(v);
+  return isNaN(d) ? String(v) : d.toLocaleDateString('en-AU',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+}
+function fmtTime(v) {
+  if (!v) return '—';
+  const d = new Date(v);
+  return isNaN(d) ? String(v) : d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+function weekLabel(ts) {
+  const d = new Date(ts); if(isNaN(d)) return String(ts);
+  const mon = new Date(d); mon.setDate(d.getDate()-((d.getDay()+6)%7));
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  return mon.toLocaleDateString('en-AU',{day:'2-digit',month:'short'})+' – '+sun.toLocaleDateString('en-AU',{day:'2-digit',month:'short'});
+}
+function weekKey(ts) {
+  const d = new Date(ts); if(isNaN(d)) return String(ts);
+  const mon = new Date(d); mon.setDate(d.getDate()-((d.getDay()+6)%7));
+  return mon.toISOString().slice(0,10);
+}
+function haversine(lat1,lng1,lat2,lng2) {
+  const R=6371000,r=x=>x*Math.PI/180,dLat=r(lat2-lat1),dLng=r(lng2-lng1);
+  const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function apiCall(params) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const url = API + '?' + Object.entries({...params, callback: cb})
+      .map(([k,v]) => encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cb];
+      document.body.removeChild(script);
+      reject(new Error('Timeout'));
+    }, 15000);
+    window[cb] = (data) => {
+      clearTimeout(timeout);
+      delete window[cb];
+      document.body.removeChild(script);
+      resolve(data);
+    };
+    script.src = url;
+    script.onerror = () => { clearTimeout(timeout); delete window[cb]; reject(new Error('Script error')); };
+    document.body.appendChild(script);
+  });
+}
+
+document.getElementById('login-access').addEventListener('change', function() {
+  document.getElementById('admin-pin-field').style.display = this.value==='admin' ? 'block' : 'none';
+});
+
+async function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  const role = document.getElementById('login-role').value;
+  const access = document.getElementById('login-access').value;
+  if (!name) { alert('Enter your name.'); return; }
+  if (!role) { alert('Select your role.'); return; }
+  if (access==='admin' && document.getElementById('admin-pin').value !== ADMIN_PIN) { alert('Incorrect PIN.'); return; }
+  state.user=name; state.role=role; state.access=access;
+  loading(true);
+  try { await apiCall({action:'init'}); } catch(e) {}
+  loading(false);
+  if (access==='admin') {
+    document.getElementById('admin-name-display').textContent = name;
+    show('screen-admin'); refreshAdmin();
+  } else {
+    document.getElementById('worker-name-display').textContent = name;
+    show('screen-worker'); getLocation(); checkIfClockedIn();
+  }
+}
+
+function doLogout() {
+  state = {user:null,role:null,access:null,location:null,locationOk:null,locationAddress:null,currentRecordId:null,adminTab:'pending',allRecords:[]};
+  document.getElementById('login-name').value='';
+  document.getElementById('login-role').value='';
+  document.getElementById('login-access').value='worker';
+  document.getElementById('admin-pin').value='';
+  document.getElementById('admin-pin-field').style.display='none';
+  show('screen-login');
+}
+
+function getLocation() {
+  const dot=document.getElementById('loc-dot'), txt=document.getElementById('loc-text');
+  if (!navigator.geolocation) { dot.className='loc-dot err'; txt.textContent='Geolocation not supported.'; return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    state.location={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    const dist=haversine(pos.coords.latitude,pos.coords.longitude,SITE_LAT,SITE_LNG);
+    state.locationOk=dist<=GEOFENCE_M;
+    state.locationAddress=pos.coords.latitude.toFixed(5)+', '+pos.coords.longitude.toFixed(5);
+    if (state.locationOk) {
+      dot.className='loc-dot ok'; txt.textContent='Location confirmed — within site area ('+Math.round(dist)+'m from centre)';
+    } else {
+      dot.className='loc-dot warn'; txt.textContent='Location captured — '+parseFloat((dist/1000).toFixed(1))+'km from site centre. Will be flagged.';
+    }
+  }, () => { dot.className='loc-dot err'; txt.textContent='Location access denied — GPS will not be recorded.'; });
+}
+
+async function checkIfClockedIn() {
+  loading(true);
+  try {
+    const res = await apiCall({action:'getRecords'});
+    const mine = (res.records||[]).filter(r => r.name===state.user && !r.clockOut);
+    if (mine.length) { state.currentRecordId=String(mine[mine.length-1].id); showClockedInState(mine[mine.length-1]); }
+    renderMyRecords(res.records||[]);
+  } catch(e) { toast('Could not load records'); }
+  loading(false);
+}
+
+function showClockedInState(r) {
+  document.getElementById('clock-in-card').style.display='none';
+  document.getElementById('clock-out-card').style.display='block';
+  document.getElementById('clocked-in-banner').style.display='block';
+  document.getElementById('banner-detail').textContent='Clocked in at '+fmtTime(r.clockIn)+' — '+r.site;
+}
+
+async function clockIn() {
+  const site=document.getElementById('site-select').value;
+  const comments=document.getElementById('clock-in-comments').value.trim();
+  if (!site) { alert('Select a site before clocking in.'); return; }
+  const id=Date.now();
+  const now=new Date().toLocaleString('en-AU',{timeZone:'Australia/Brisbane',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  loading(true);
+  try {
+    await apiCall({
+      action:'clockIn', id, name:state.user, role:state.role, site,
+      clockIn:now, amNotes:comments,
+      lat:state.location?state.location.lat:'',
+      lng:state.location?state.location.lng:'',
+      address:state.locationAddress||'',
+      locationFlag:state.locationOk===false?'OFF-SITE':state.locationOk===true?'OK':'NO GPS'
+    });
+    state.currentRecordId=String(id);
+    showClockedInState({clockIn:Date.now(),site});
+    document.getElementById('clock-in-comments').value='';
+    document.getElementById('site-select').value='';
+    toast('Clocked in successfully');
+    const res=await apiCall({action:'getRecords'});
+    renderMyRecords(res.records||[]);
+  } catch(e) { toast('Error — check connection'); }
+  loading(false);
+}
+
+async function clockOut() {
+  if (!state.currentRecordId) return;
+  const notes=document.getElementById('clock-out-comments').value.trim();
+  const now=new Date().toLocaleString('en-AU',{timeZone:'Australia/Brisbane',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  loading(true);
+  try {
+    await apiCall({action:'clockOut',id:state.currentRecordId,clockOut:now,pmNotes:notes});
+    state.currentRecordId=null;
+    document.getElementById('clock-in-card').style.display='block';
+    document.getElementById('clock-out-card').style.display='none';
+    document.getElementById('clocked-in-banner').style.display='none';
+    document.getElementById('clock-out-comments').value='';
+    toast('Clocked out — have a good one');
+    const res=await apiCall({action:'getRecords'});
+    renderMyRecords(res.records||[]);
+  } catch(e) { toast('Error — check connection'); }
+  loading(false);
+}
+
+function renderMyRecords(records) {
+  const mine=records.filter(r=>r.name===state.user).slice(-7).reverse();
+  const el=document.getElementById('my-records');
+  if (!mine.length) { el.innerHTML='<div class="empty">No records yet</div>'; return; }
+  el.innerHTML=mine.map(r=>`
+    <div class="record-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:13px;font-weight:600;">${r.clockIn}</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${r.clockOut?'<span class="badge badge-gray">Completed</span>':'<span class="badge badge-green">In progress</span>'}
+          ${r.approved==='Yes'?'<span class="badge badge-blue">Approved</span>':''}
+          ${r.locationFlag==='OFF-SITE'?'<span class="badge badge-amber">GPS flagged</span>':''}
+        </div>
+      </div>
+      <div class="record-meta">${r.site} &nbsp;·&nbsp; In: ${r.clockIn} &nbsp;·&nbsp; Out: ${r.clockOut||'—'} ${r.duration?'&nbsp;·&nbsp; '+parseFloat(r.duration).toFixed(1)+'h':''}</div>
+      ${r.amNotes?`<div class="record-note">AM: "${r.amNotes}"</div>`:''}
+      ${r.pmNotes?`<div class="record-note">PM: "${r.pmNotes}"</div>`:''}
+      ${r.locationFlag==='OFF-SITE'?'<div class="flag-note">&#9888; Clocked in outside site area</div>':''}
+    </div>
+  `).join('');
+}
+
+async function refreshAdmin() {
+  loading(true);
+  try {
+    const res=await apiCall({action:'getRecords'});
+    state.allRecords=res.records||[];
+    renderAdmin();
+  } catch(e) { toast('Could not load records'); }
+  loading(false);
+}
+
+function switchTab(btn,tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active'); state.adminTab=tab; renderAdmin();
+}
+
+function renderAdmin() {
+  const all=state.allRecords;
+  const pending=all.filter(r=>r.clockOut&&r.approved!=='Yes');
+  const live=all.filter(r=>!r.clockOut);
+  const flagged=all.filter(r=>r.locationFlag==='OFF-SITE');
+  document.getElementById('admin-metrics').innerHTML=`
+    <div class="metric"><div class="metric-val">${live.length}</div><div class="metric-lbl">On site now</div></div>
+    <div class="metric"><div class="metric-val">${pending.length}</div><div class="metric-lbl">Awaiting approval</div></div>
+    <div class="metric"><div class="metric-val">${flagged.length}</div><div class="metric-lbl">GPS flagged</div></div>
+  `;
+  let records=state.adminTab==='pending'?pending:state.adminTab==='live'?live:all.slice().reverse();
+  const el=document.getElementById('admin-content');
+  if (!records.length) { el.innerHTML='<div class="empty">Nothing here</div>'; return; }
+  if (state.adminTab==='pending') {
+    const byWeek={};
+    records.forEach(r=>{ const k=weekKey(r.clockIn); if(!byWeek[k]) byWeek[k]={label:weekLabel(r.clockIn),recs:[]}; byWeek[k].recs.push(r); });
+    el.innerHTML=Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).map(([k,{label,recs}])=>`
+      <div style="margin-bottom:1.5rem;">
+        <div class="week-label">
+          <span>Week of ${label}</span>
+          <button class="btn btn-sm btn-outline-green" onclick="approveWeek('${k}')">Approve all this week</button>
+        </div>
+        <div class="card" style="padding:0.75rem 1.25rem;">${recs.map(r=>recordHTML(r,true)).join('')}</div>
+      </div>
+    `).join('');
+  } else {
+    el.innerHTML=`<div class="card" style="padding:0.75rem 1.25rem;">${records.map(r=>recordHTML(r,false)).join('')}</div>`;
+  }
+}
+
+function recordHTML(r,showApprove) {
+  return `
+    <div class="record-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span class="record-name">${r.name} <span style="font-weight:400;color:#888;font-size:12px;">${r.role}</span></span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          ${r.approved==='Yes'?'<span class="badge badge-blue">Approved</span>':r.clockOut?'<span class="badge badge-amber">Pending</span>':'<span class="badge badge-green">On site</span>'}
+          ${r.locationFlag==='OFF-SITE'?'<span class="badge badge-red">GPS off-site</span>':''}
+          ${r.locationFlag==='NO GPS'?'<span class="badge badge-gray">No GPS</span>':''}
+        </div>
+      </div>
+      <div class="record-meta">${r.site}</div>
+      <div class="record-meta">In: ${r.clockIn} &nbsp;·&nbsp; Out: ${r.clockOut||'<span style="color:#e67e22">Still on site</span>'} ${r.duration?'&nbsp;·&nbsp; '+parseFloat(r.duration).toFixed(1)+'h':''}</div>
+      ${r.address?`<div class="record-meta">GPS: ${r.address}</div>`:''}
+      ${r.amNotes?`<div class="record-note">AM: "${r.amNotes}"</div>`:''}
+      ${r.pmNotes?`<div class="record-note">PM: "${r.pmNotes}"</div>`:''}
+      ${r.approved==='Yes'?`<div class="record-meta" style="margin-top:4px;">Approved by ${r.approvedBy} on ${r.approvedDate}</div>`:''}
+      ${showApprove&&r.clockOut&&r.approved!=='Yes'?`<div style="margin-top:8px;"><button class="btn btn-sm btn-outline-green" onclick="approveOne('${r.id}')">Approve</button></div>`:''}
+    </div>
+  `;
+}
+
+async function approveOne(id) {
+  const now=new Date().toLocaleString('en-AU',{timeZone:'Australia/Brisbane',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+  loading(true);
+  try { await apiCall({action:'approve',id,approvedBy:state.user,approvedDate:now}); toast('Record approved'); await refreshAdmin(); }
+  catch(e) { toast('Error approving'); loading(false); }
+}
+
+async function approveWeek(wk) {
+  const toApprove=state.allRecords.filter(r=>r.clockOut&&r.approved!=='Yes'&&weekKey(r.clockIn)===wk);
+  const now=new Date().toLocaleString('en-AU',{timeZone:'Australia/Brisbane',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+  loading(true);
+  try {
+    for (const r of toApprove) await apiCall({action:'approve',id:r.id,approvedBy:state.user,approvedDate:now});
+    toast(toApprove.length+' record'+(toApprove.length!==1?'s':'')+' approved');
+    await refreshAdmin();
+  } catch(e) { toast('Error approving'); loading(false); }
+}
+
+setInterval(()=>{ const el=document.getElementById('live-clock'); if(el) el.textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}); },1000);
+</script>
+</body>
+</html>
